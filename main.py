@@ -1,18 +1,36 @@
 import re
 import pickle
+import MeCab
+import operator
+import sys
+import csv
+import os
 from tqdm import tqdm
 from heapq import nlargest
 
 with open("/Users/taichikato/Downloads/wikiextractor/corpus/AA/wiki_00") as f:
 	content = f.readlines()
-kanjis=[]
 letters = "ぁあぃいぅうぇえぉおかがきぎくぐけげこごさざしじすずせぜそぞただちぢっつづてでとどなにぬねのはばぱひびぴふぶぷへべぺほぼぽまみむめもゃやゅゆょよらりるれろゎわゐゑをんABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz~!@#$%^&}*()_+{|:\"<>?`-=[];',./\n〜！＠＃＄％＾＆＊（）＿＋『』｜：”＜＞？、。・；’「」￥ー＝0123456789０１２３４５６７８９ァアィイゥウェエォオカガキギクグケゲコゴサザシジスズセゼソゾタダチヂッツヅテデトドナニヌネノハバパヒビピフブプヘベペホボポマミムメモャヤュユョヨラリルレロヮワヰヱヲンヴ"
-print("File loaded")
-for line in tqdm(content, unit="line", total=len(content), unit_divisor=1024, desc="Finding Kanjis"):
-	line = re.sub(letters, '', line)
-	for character in list(line):
-		if character not in list(letters):
-			kanjis.append(character)
+script_dir = os.path.dirname(os.path.realpath(__file__)) + '/'
+mode = "kanjis" #Either 漢字摘出: "kanji" or 熟語摘出： "jukugo"
+def tokenize():
+	tokens=[]
+	print("File loaded")
+	t = MeCab.Tagger()
+	for line in tqdm(content, unit="line", total=len(content), unit_divisor=1024, desc="Finding Jukugos"):
+		m = t.parseToNode(line)
+		while m:
+			tokens.append(m.surface)
+			m = m.next
+	return tokens
+def extract_kanji():
+	kanjis=[]
+	print("File loaded")
+	for line in tqdm(content, unit="line", total=len(content), unit_divisor=1024, desc="Finding Kanjis"):
+		for character in list(line):
+			if character not in list(letters):
+				kanjis.append(character)
+	return kanjis
 def map_book(tokens):
 	print("Begin Mapping")
 	hash_map = {}
@@ -26,11 +44,18 @@ def map_book(tokens):
 	else:
 		print("No token found")
 		return None
-map = map_book(kanjis)
 def save_obj(obj, name ):
-	with open('/Users/taichikato/Developer/kanji_frequency/'+ name + '.pkl', 'wb+') as f:
+	with open(script_dir + name + '.pkl', 'wb+') as f:
 		pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
 		print("Saved")
 
-save_obj(map, "kanji_map")
+csvfile = "token.csv"
+tokens = []
+if mode is "kanjis":
+	tokens = extract_kanji()
+elif mode is "jukugo":
+	tokens = tokenize()
+map = map_book(tokens)
+save_obj(map, "temp/" + mode + "_map")
+save_obj(tokens, "temp/" + mode + "_tokens")
 print("END")

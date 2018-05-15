@@ -1,12 +1,14 @@
 import operator
 import pickle
 import csv
-script_dir = os.path.dirname(__file__)
+import sys
+import os
+script_dir = os.path.dirname(os.path.realpath(__file__)) + '/'
 kanjis = pickle.load(open(script_dir + "kanji_map.pkl", "rb"))
-sortedkanjis = sorted(kanjis.items(), key=operator.itemgetter(1))
+# sortedkanjis = sorted(kanjis.items(), key=operator.itemgetter(1))
 
-csvfile = "frqdist.csv"
+csvfile = "years.csv"
 with open(script_dir + csvfile, "w+") as output:
-    writer = csv.writer(output, lineterminator='\n')
-    for key,val in sortedkanjis:
-        writer.writerow([key,val]) 
+	writer = csv.writer(output)
+	for key, val in kanjis.items():
+		writer.writerow([key, val])
